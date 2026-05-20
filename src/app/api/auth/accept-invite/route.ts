@@ -3,30 +3,7 @@
 
 import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
-import type { UserRole } from '@/types/domain'
-
-interface InviteTokenPayload {
-  email: string
-  tenantId: string
-  role: UserRole
-  invitedBy: string
-  expiresAt: string
-}
-
-// ─── 토큰 검증 ────────────────────────────────────────────
-function verifyInviteToken(token: string): InviteTokenPayload | null {
-  try {
-    // 실제 구현: JWT 검증 또는 DB 조회
-    const payload = JSON.parse(
-      Buffer.from(token, 'base64url').toString()
-    ) as InviteTokenPayload
-
-    if (new Date(payload.expiresAt) < new Date()) return null
-    return payload
-  } catch {
-    return null
-  }
-}
+import { verifyInviteToken } from '@/lib/invite-token'
 
 // ─── GET — 토큰 유효성 확인 (초대 페이지 진입 시 호출) ──
 export async function GET(req: NextRequest) {

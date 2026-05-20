@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Eye, EyeOff, Shield, AlertCircle, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -8,11 +8,19 @@ import { cn } from '@/lib/utils'
 type LoginState = 'idle' | 'loading' | 'error'
 
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  )
+}
+
+function LoginContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const redirect = searchParams.get('redirect') ?? '/app/dashboard'
-  const type     = searchParams.get('type')        // 'super_admin' 이면 SA 모드
+  const redirect = searchParams?.get('redirect') ?? '/app/dashboard'
+  const type     = searchParams?.get('type')       // 'super_admin' 이면 SA 모드
   const isSA     = type === 'super_admin'
 
   const [email,    setEmail]    = useState('')
@@ -29,7 +37,7 @@ export default function LoginPage() {
     setErrMsg('')
 
     try {
-      const { signIn } = await import('@/lib/supabase/auth')
+      const { signIn } = await import('@/lib/supabase/auth-client')
       const { session: supaSession, error } = await signIn(email, password)
 
       if (error) {

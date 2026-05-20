@@ -101,10 +101,10 @@ export const CALL_RESULT_LABEL: Record<string, string> = {
 }
 
 export const CALL_RESULT_CLASS: Record<string, string> = {
-  connected: 'bg-green-50 text-green-600',
-  no_answer: 'bg-amber-50 text-amber-600',
-  rejected: 'bg-red-50 text-red-600',
-  scheduled: 'bg-blue-50 text-blue-600',
+  connected: 'bg-[#0f2d1c] text-[#3FB950]',
+  no_answer: 'bg-[#3d2b0d] text-[#E3B341]',
+  rejected:  'bg-[#3d1a1a] text-[#FF7B72]',
+  scheduled: 'bg-[#1c2d4a] text-[#58A6FF]',
 }
 
 // ─── 방문 목적 ────────────────────────────────────────────
@@ -145,9 +145,9 @@ export const TASK_PRIORITY_LABEL: Record<string, string> = {
 }
 
 export const TASK_PRIORITY_CLASS: Record<string, string> = {
-  high: 'text-red-600',
-  medium: 'text-amber-600',
-  low: 'text-slate-400',
+  high:   'bg-[#3d1a1a] text-[#FF7B72]',
+  medium: 'bg-[#3d2b0d] text-[#E3B341]',
+  low:    'bg-dk-surface2 text-dk-muted',
 }
 
 // ─── 업무 유형 ────────────────────────────────────────────

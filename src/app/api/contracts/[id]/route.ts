@@ -16,11 +16,11 @@ export const GET = withAuth(async (req, ctx, params) => {
     .from('contracts')
     .select(`
       *,
-      company:companies!company_id(id, name, biz_no, address_city),
-      product:products!product_id(id, name, billing_cycle),
-      assigned_user:users!assigned_user_id(id, name),
+      company:companies!contracts_company_id_fkey(id, name, biz_no, address_city),
+      product:products!contracts_product_id_fkey(id, name, billing_cycle),
+      assigned_user:users!contracts_assigned_user_id_fkey(id, name),
       contract_accounts(*),
-      renewals(id, status, risk_level, risk_score, contract_expires_at, result, created_at)
+      renewals!renewals_contract_id_fkey(id, status, risk_level, risk_score, contract_expires_at, result, created_at)
     `)
     .eq('id', params!.id)
     .eq('tenant_id', ctx.tenantId)

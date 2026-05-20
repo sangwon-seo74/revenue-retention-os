@@ -2,6 +2,9 @@
 // Revenue Retention OS — 공통 유틸
 // ============================================================
 
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
 // ─── 날짜 포맷 ───────────────────────────────────────────
 export function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—'
@@ -40,11 +43,11 @@ export function formatDday(days: number): string {
 }
 
 export function getDdayClass(days: number): string {
-  if (days < 0) return 'text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400'
-  if (days <= 7) return 'text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400'
-  if (days <= 14) return 'text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400'
-  if (days <= 30) return 'text-amber-500 bg-amber-50 dark:bg-amber-950 dark:text-amber-400'
-  return 'text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400'
+  if (days < 0)  return 'text-[#FF7B72]'
+  if (days <= 7)  return 'text-[#FF7B72]'
+  if (days <= 14) return 'text-[#E3B341]'
+  if (days <= 30) return 'text-[#E3B341]'
+  return 'text-dk-muted'
 }
 
 export function getRenewalBucket(expiresAt: string): string {
@@ -103,22 +106,6 @@ export function err(code: string, message: string, status = 400): Response {
   return Response.json({ data: null, error: { code, message } }, { status })
 }
 
-// ─── 쿼리 파라미터 파싱 ──────────────────────────────────
-export function parseSearchParams(url: string) {
-  const { searchParams } = new URL(url)
-  return {
-    page: parseInt(searchParams.get('page') ?? '1'),
-    limit: parseInt(searchParams.get('limit') ?? '20'),
-    search: searchParams.get('search') ?? '',
-    status: searchParams.get('status') ?? '',
-    risk: searchParams.get('risk') ?? '',
-    assigned: searchParams.get('assigned') ?? '',
-    from: searchParams.get('from') ?? '',
-    to: searchParams.get('to') ?? '',
-  }
-}
-
-// ─── CN 유틸 (tailwind-merge 없을 때 폴백) ───────────────
-export function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ')
+export function cn(...inputs: ClassValue[]): string {
+  return twMerge(clsx(inputs))
 }

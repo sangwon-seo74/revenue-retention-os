@@ -17,7 +17,8 @@ export const GET = withAuth(async (req, ctx) => {
   const company_id  = searchParams.get('company_id')
   const user_id     = searchParams.get('user_id')
   const team_id     = searchParams.get('team_id')
-  const days_to     = Number(searchParams.get('days_to') ?? 90)
+  const days_to       = Number(searchParams.get('days_to') ?? 90)
+  const include_closed = searchParams.get('include_closed') === 'true'
 
   const today   = new Date().toISOString().split('T')[0]
   const dateTo  = new Date(Date.now() + days_to * 86400000).toISOString().split('T')[0]
@@ -27,7 +28,7 @@ export const GET = withAuth(async (req, ctx) => {
     .select(`
       id, status, risk_level, risk_score, contract_expires_at, target_renewal_at,
       result, lost_reason, memo, created_at, updated_at,
-      contract:contracts!contract_id(id, contract_no, expires_at, final_amount, amount),
+      contract:contracts!contract_id(id, contract_no, expires_at, final_amount, amount, product:products!product_id(id, name)),
       company:companies!company_id(id, name, grade),
       assigned_user:users!assigned_user_id(id, name)
     `, { count: 'exact' })
@@ -36,6 +37,8 @@ export const GET = withAuth(async (req, ctx) => {
     .lte('contract_expires_at', dateTo)
     .order('contract_expires_at', { ascending: true })
     .range(offset, offset + limit - 1)
+
+  if (!include_closed) query = query.not('status', 'in', '("won","lost")')
 
   if (ctx.role === 'sales') query = query.eq('assigned_user_id', ctx.userId)
   if (status)     query = query.eq('status', status)

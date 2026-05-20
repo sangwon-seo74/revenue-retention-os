@@ -25,9 +25,9 @@ export const GET = withAuth(async (req, ctx) => {
     .select(`
       id, contract_no, started_at, expires_at, amount, discount_rate,
       final_amount, is_paid, paid_at, status, account_count, renewal_count,
-      company:companies!company_id(id, name),
-      product:products!product_id(id, name),
-      assigned_user:users!assigned_user_id(id, name)
+      company:companies!contracts_company_id_fkey(id, name),
+      product:products!contracts_product_id_fkey(id, name),
+      assigned_user:users!contracts_assigned_user_id_fkey(id, name)
     `, { count: 'exact' })
     .eq('tenant_id', ctx.tenantId)
     .order(sort, { ascending: order === 'asc' })

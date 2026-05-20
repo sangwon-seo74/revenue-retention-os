@@ -12,11 +12,16 @@ export const GET = withAuth(async (req, ctx) => {
   const { searchParams } = new URL(req.url)
   const { supabase } = createRouteHandlerClient(req)
 
-  const mine     = searchParams.get('mine') === 'true'
-  const status   = searchParams.get('status') as TaskStatus | null
-  const priority = searchParams.get('priority') as TaskPriority | null
-  const overdue  = searchParams.get('overdue') === 'true'
-  const user_id  = searchParams.get('user_id')
+  const mine       = searchParams.get('mine') === 'true'
+  const status     = searchParams.get('status') as TaskStatus | null
+  const priority   = searchParams.get('priority') as TaskPriority | null
+  const overdue    = searchParams.get('overdue') === 'true'
+  const user_id    = searchParams.get('user_id')
+  const company_id = searchParams.get('company_id')
+  const from       = searchParams.get('from')      // created_at 범위 시작 (YYYY-MM-DD)
+  const to         = searchParams.get('to')        // created_at 범위 종료 (YYYY-MM-DD)
+  const done_from  = searchParams.get('done_from') // done_at 범위 시작 (YYYY-MM-DD)
+  const done_to    = searchParams.get('done_to')   // done_at 범위 종료 (YYYY-MM-DD)
 
   let query = supabase
     .from('tasks')
@@ -32,9 +37,14 @@ export const GET = withAuth(async (req, ctx) => {
   if (mine || ctx.role === 'sales') query = query.eq('assigned_user_id', ctx.userId)
   else if (user_id)                 query = query.eq('assigned_user_id', user_id)
 
-  if (status)   query = query.eq('status', status)
-  if (priority) query = query.eq('priority', priority)
-  if (overdue)  query = query.lt('due_at', new Date().toISOString()).neq('status', 'done')
+  if (company_id) query = query.eq('company_id', company_id)
+  if (status)     query = query.eq('status', status)
+  if (priority)   query = query.eq('priority', priority)
+  if (overdue)    query = query.lt('due_at', new Date().toISOString()).neq('status', 'done')
+  if (from)       query = query.gte('created_at', from)
+  if (to)         query = query.lte('created_at', to + 'T23:59:59')
+  if (done_from)  query = query.gte('done_at', done_from)
+  if (done_to)    query = query.lte('done_at', done_to + 'T23:59:59')
 
   const { data, count, error } = await query
   if (error) return err('DB_ERROR', error.message, 500)

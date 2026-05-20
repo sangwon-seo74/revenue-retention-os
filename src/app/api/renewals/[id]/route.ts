@@ -18,8 +18,8 @@ export const GET = withAuth(async (req, ctx, params) => {
     .from('renewals')
     .select(`
       *,
-      contract:contracts!contract_id(id, contract_no, expires_at, final_amount, amount),
-      company:companies!company_id(id, name),
+      contract:contracts!contract_id(id, contract_no, started_at, expires_at, final_amount, amount, is_paid, payment_method, account_count, status, product:products!product_id(id, name)),
+      company:companies!company_id(id, name, biz_no, industry, address_city, status),
       assigned_user:users!assigned_user_id(id, name)
     `)
     .eq('id', params!.id)
@@ -61,9 +61,14 @@ export const PATCH = withAuth(async (req, ctx, params) => {
       if (!result_contract_id) return err('VALIDATION', '갱신 완료 시 result_contract_id가 필요합니다')
       updates.status = 'won'
       updates.result_contract_id = result_contract_id
-      // 원계약 상태 갱신됨으로 변경
-      await supabase.from('contracts').update({ status: 'renewed' })
-        .eq('id', result_contract_id).eq('tenant_id', ctx.tenantId)
+      // 원계약(이 갱신 레코드의 contract_id) 상태를 갱신됨으로 변경
+      const { data: renewalRow } = await supabase
+        .from('renewals').select('contract_id')
+        .eq('id', params!.id).eq('tenant_id', ctx.tenantId).single()
+      if (renewalRow?.contract_id) {
+        await supabase.from('contracts').update({ status: 'renewed' })
+          .eq('id', renewalRow.contract_id).eq('tenant_id', ctx.tenantId)
+      }
     } else if (result === 'churned') {
       updates.status = 'lost'
       updates.lost_reason = lost_reason ?? null

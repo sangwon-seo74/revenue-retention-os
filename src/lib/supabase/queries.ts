@@ -3,7 +3,7 @@
 // Supabase SDK 기반 공통 쿼리 모음
 // ============================================================
 
-import { createServerComponentClient } from './client'
+import { createServerComponentClient } from './server'
 import type {
   Company, Contract, Renewal, Activity, Task,
   User, Team, Product, MessageTemplate, ApiIntegration,
@@ -201,44 +201,50 @@ export async function getDashboardSummary(opts: QueryOptions) {
   const plus14 = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]
   const plus30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
 
-  const baseFilter = role === 'sales' && userId
-    ? (q: ReturnType<typeof supabase.from>) => (q as any).eq('assigned_user_id', userId)
-    : (q: ReturnType<typeof supabase.from>) => q
+  const isSales = role === 'sales' && !!userId
 
   // 오늘 통화 수
-  const { count: callsToday } = await supabase
+  let callsTodayQ = supabase
     .from('activities')
     .select('*', { count: 'exact', head: true })
     .eq('tenant_id', tenantId)
     .eq('type', 'call')
     .gte('activity_at', `${today}T00:00:00`)
     .lte('activity_at', `${today}T23:59:59`)
+  if (isSales) callsTodayQ = callsTodayQ.eq('user_id', userId!)
+  const { count: callsToday } = await callsTodayQ
 
   // 기한 초과 태스크
-  const { count: overdueTasks } = await supabase
+  let overdueTasksQ = supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
     .eq('tenant_id', tenantId)
     .neq('status', 'done')
     .lt('due_at', new Date().toISOString())
+  if (isSales) overdueTasksQ = overdueTasksQ.eq('assigned_user_id', userId!)
+  const { count: overdueTasks } = await overdueTasksQ
 
   // D-7 갱신 건수
-  const { count: renewalsD7 } = await supabase
+  let renewalsD7Q = supabase
     .from('renewals')
     .select('*', { count: 'exact', head: true })
     .eq('tenant_id', tenantId)
     .not('status', 'in', '(won,lost)')
     .lte('contract_expires_at', plus7)
     .gte('contract_expires_at', today)
+  if (isSales) renewalsD7Q = renewalsD7Q.eq('assigned_user_id', userId!)
+  const { count: renewalsD7 } = await renewalsD7Q
 
   // D-30 갱신 건수
-  const { count: renewalsD30 } = await supabase
+  let renewalsD30Q = supabase
     .from('renewals')
     .select('*', { count: 'exact', head: true })
     .eq('tenant_id', tenantId)
     .not('status', 'in', '(won,lost)')
     .lte('contract_expires_at', plus30)
     .gte('contract_expires_at', today)
+  if (isSales) renewalsD30Q = renewalsD30Q.eq('assigned_user_id', userId!)
+  const { count: renewalsD30 } = await renewalsD30Q
 
   return {
     calls_today:   callsToday   ?? 0,

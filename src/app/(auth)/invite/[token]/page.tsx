@@ -74,7 +74,7 @@ function PasswordStrength({ password }: { password: string }) {
 export default function AcceptInvitePage() {
   const params   = useParams()
   const router   = useRouter()
-  const token    = params.token as string
+  const token    = (params?.token ?? '') as string
 
   const [tokenState,  setTokenState]  = useState<TokenState>('loading')
   const [invite,      setInvite]      = useState<InvitePayload | null>(null)

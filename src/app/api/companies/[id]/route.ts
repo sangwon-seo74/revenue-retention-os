@@ -60,10 +60,9 @@ export const GET = withAuth(async (req, ctx, params) => {
 
     supabase
       .from('tasks')
-      .select('id, title, type, priority, status, due_at, is_auto')
+      .select('id, title, type, priority, status, due_at, is_auto, created_at')
       .eq('company_id', params!.id)
-      .neq('status', 'done')
-      .order('due_at', { ascending: true, nullsFirst: false }),
+      .order('created_at', { ascending: false }),
 
     supabase
       .from('messages')

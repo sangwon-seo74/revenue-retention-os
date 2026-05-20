@@ -5,6 +5,7 @@
 
 import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
+import { createRouteHandlerClient } from '@/lib/supabase/client'
 
 // ─── 테넌트 인증 컨텍스트 ────────────────────────────────
 export interface AuthContext {
@@ -19,24 +20,38 @@ export interface AuthContext {
  * 미들웨어를 통과한 요청만 /app/* 에 도달하므로 여기서는 헤더 존재 여부만 확인.
  */
 export async function getAuthContext(req: NextRequest): Promise<AuthContext | null> {
+  // 프록시가 주입한 헤더 우선 (빠른 경로)
   const tenantId = req.headers.get('x-tenant-id')
   const userId   = req.headers.get('x-user-id')
   const role     = req.headers.get('x-user-role') as AuthContext['role'] | null
+  if (tenantId && userId && role) return { userId, tenantId, role }
 
-  if (!tenantId || !userId || !role) return null
-  return { userId, tenantId, role }
+  // 클라이언트 컴포넌트에서 직접 호출 시 쿠키 기반 인증 폴백
+  const { authClient, supabase } = createRouteHandlerClient(req)
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) return null
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('tenant_id, role, is_active')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.is_active) return null
+  return { userId: user.id, tenantId: profile.tenant_id, role: profile.role as AuthContext['role'] }
 }
 
 /**
  * 인증 필수 Route Handler 래퍼
  * - 인증 실패 시 401
  * - role 제한 시 403
+ * Next.js 15: params는 Promise이므로 await 처리
  */
 export function withAuth(
-  handler: (req: NextRequest, ctx: AuthContext, params?: Record<string, string>) => Promise<Response>,
+  handler: (req: NextRequest, ctx: AuthContext, params: Record<string, string>) => Promise<Response>,
   options?: { roles?: AuthContext['role'][] }
 ) {
-  return async (req: NextRequest, { params }: { params?: Record<string, string> } = {}) => {
+  return async (req: NextRequest, context: { params: Promise<Record<string, string>> }) => {
     const ctx = await getAuthContext(req)
     if (!ctx) return err('UNAUTHORIZED', '인증이 필요합니다', 401)
 
@@ -45,6 +60,7 @@ export function withAuth(
     }
 
     try {
+      const params = await context.params
       return await handler(req, ctx, params)
     } catch (e) {
       console.error('[API Error]', e)
@@ -74,29 +90,6 @@ export function parseCommonFilters(url: string) {
     sort:      searchParams.get('sort') ?? 'created_at',
     order:     (searchParams.get('order') ?? 'desc') as 'asc' | 'desc',
   }
-}
-
-// ─── SQL 빌더 헬퍼 (pg 태그드 쿼리 대체용) ──────────────
-export function buildWhereClause(
-  conditions: Array<{ sql: string; value?: unknown } | null | undefined>
-): { where: string; values: unknown[] } {
-  const valid = conditions.filter((c): c is { sql: string; value?: unknown } => !!c)
-  if (valid.length === 0) return { where: '', values: [] }
-
-  let idx = 1
-  const parts: string[] = []
-  const values: unknown[] = []
-
-  for (const cond of valid) {
-    if (cond.value !== undefined) {
-      parts.push(cond.sql.replace('?', `$${idx++}`))
-      values.push(cond.value)
-    } else {
-      parts.push(cond.sql)
-    }
-  }
-
-  return { where: `WHERE ${parts.join(' AND ')}`, values }
 }
 
 // ─── 타입 가드 ─────────────────────────────────────────

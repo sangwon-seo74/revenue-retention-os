@@ -5,20 +5,8 @@
 import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth } from '@/lib/api'
+import { createInviteToken } from '@/lib/invite-token'
 import type { UserRole } from '@/types/domain'
-
-// ─── 초대 토큰 생성 ──────────────────────────────────────
-function generateInviteToken(payload: {
-  email: string
-  tenantId: string
-  role: UserRole
-  invitedBy: string
-  expiresAt: string
-}): string {
-  // 실제 구현 시 JWT 또는 암호화된 UUID 사용
-  // const token = await new SignJWT(payload).setExpirationTime('7d').sign(secret)
-  return Buffer.from(JSON.stringify(payload)).toString('base64url')
-}
 
 // ─── 초대 이메일 발송 ────────────────────────────────────
 async function sendInviteEmail(params: {
@@ -76,7 +64,7 @@ export const POST = withAuth(async (req, ctx) => {
 
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  const token = generateInviteToken({
+  const token = createInviteToken({
     email,
     tenantId: ctx.tenantId,
     role,

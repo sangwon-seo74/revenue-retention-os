@@ -41,7 +41,22 @@ export const GET = withAuth(async (req, ctx) => {
   const { data, count, error } = await query
   if (error) return err('DB_ERROR', error.message, 500)
 
-  return ok({ data: data ?? [], count: count ?? 0, page, limit })
+  // Batch-fetch active contracts and attach to each company
+  const rows = data ?? []
+  const activeContractMap: Record<string, { expires_at: string; final_amount: number }> = {}
+  if (rows.length > 0) {
+    const { data: ac } = await supabase
+      .from('contracts')
+      .select('company_id, expires_at, final_amount')
+      .in('company_id', rows.map(c => c.id))
+      .eq('status', 'active')
+    for (const c of (ac ?? []) as { company_id: string; expires_at: string; final_amount: number }[]) {
+      activeContractMap[c.company_id] = { expires_at: c.expires_at, final_amount: c.final_amount }
+    }
+  }
+  const enriched = rows.map(c => ({ ...c, active_contract: activeContractMap[c.id] ?? null }))
+
+  return ok({ data: enriched, count: count ?? 0, page, limit })
 })
 
 export const POST = withAuth(async (req, ctx) => {

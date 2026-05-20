@@ -4,32 +4,23 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS 변수 (DESIGN_GUIDELINES.md 기준) ─────────────── */
+/* ── CSS 변수 ─────────────────────────────────────────────── */
 :root {
-  /* 배경 */
   --bg-base:        #ffffff;
   --bg-subtle:      #f8fafc;
   --bg-muted:       #f1f5f9;
   --bg-overlay:     #e2e8f0;
-
-  /* 텍스트 */
   --text-primary:   #0f172a;
   --text-secondary: #475569;
   --text-muted:     #94a3b8;
   --text-inverse:   #ffffff;
-
-  /* 테두리 */
   --border-default: #e2e8f0;
   --border-strong:  #cbd5e1;
   --border-focus:   #3b82f6;
-
-  /* 인터랙티브 */
   --interactive-default:  #3b82f6;
   --interactive-hover:    #2563eb;
   --interactive-active:   #1d4ed8;
   --interactive-disabled: #94a3b8;
-
-  /* 위험도 */
   --risk-high-bg:     #fef2f2;
   --risk-high-border: #fca5a5;
   --risk-high-text:   #dc2626;
@@ -42,34 +33,33 @@
 }
 
 .dark {
-  --bg-base:        #0f172a;
-  --bg-subtle:      #1e293b;
-  --bg-muted:       #334155;
-  --bg-overlay:     #475569;
-  --text-primary:   #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted:     #64748b;
-  --text-inverse:   #0f172a;
-  --border-default: #1e293b;
-  --border-strong:  #334155;
-  --border-focus:   #60a5fa;
-  --interactive-default:  #60a5fa;
-  --interactive-hover:    #93c5fd;
-  --interactive-active:   #bfdbfe;
-  --interactive-disabled: #475569;
-
-  --risk-high-bg:     #450a0a;
-  --risk-high-border: #991b1b;
-  --risk-high-text:   #fca5a5;
-  --risk-medium-bg:   #451a03;
-  --risk-medium-border: #92400e;
-  --risk-medium-text: #fcd34d;
-  --risk-low-bg:      #052e16;
-  --risk-low-border:  #166534;
-  --risk-low-text:    #86efac;
+  --bg-base:        #0D1117;
+  --bg-subtle:      #161B22;
+  --bg-muted:       #1C2128;
+  --bg-overlay:     #30363D;
+  --text-primary:   #E6EDF3;
+  --text-secondary: #CDD9E5;
+  --text-muted:     #8B949E;
+  --text-inverse:   #0D1117;
+  --border-default: #21262D;
+  --border-strong:  #30363D;
+  --border-focus:   #58A6FF;
+  --interactive-default:  #58A6FF;
+  --interactive-hover:    #79BAFF;
+  --interactive-active:   #A8D1FF;
+  --interactive-disabled: #6E7681;
+  --risk-high-bg:     #3d1a1a;
+  --risk-high-border: #7f2020;
+  --risk-high-text:   #FF7B72;
+  --risk-medium-bg:   #3d2b0d;
+  --risk-medium-border: #7a5000;
+  --risk-medium-text: #E3B341;
+  --risk-low-bg:      #0f2d1c;
+  --risk-low-border:  #1c5c35;
+  --risk-low-text:    #3FB950;
 }
 
-/* ── 기본 스타일 ───────────────────────────────────────── */
+/* ── 기본 스타일 ───────────────────────────────────────────── */
 * {
   box-sizing: border-box;
 }
@@ -85,12 +75,12 @@ body {
   background: var(--bg-base);
 }
 
-/* ── 숫자/금액 공통 ────────────────────────────────────── */
+/* ── 숫자/금액 공통 ────────────────────────────────────────── */
 .font-tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── 스크롤바 (webkit) ─────────────────────────────────── */
+/* ── 스크롤바 (webkit) ─────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -99,14 +89,14 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #30363D;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #6E7681;
 }
 
-/* ── 포커스 링 ─────────────────────────────────────────── */
+/* ── 포커스 링 ─────────────────────────────────────────────── */
 :focus-visible {
   outline: 2px solid var(--border-focus);
   outline-offset: 2px;
