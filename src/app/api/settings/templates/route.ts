@@ -1,7 +1,6 @@
 // GET  /api/settings/templates  — 템플릿 목록
 // POST /api/settings/templates  — 템플릿 생성
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, parsePagination } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'

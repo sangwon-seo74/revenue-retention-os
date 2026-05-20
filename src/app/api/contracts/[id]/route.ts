@@ -2,7 +2,6 @@
 // PATCH  /api/contracts/[id]
 // DELETE /api/contracts/[id]
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, requireId } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
@@ -100,7 +99,7 @@ export const DELETE = withAuth(async (req, ctx, params) => {
 
   if (contract.status === 'active') {
     // 활성 계약은 삭제 대신 cancelled 처리
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('contracts')
       .update({ status: 'cancelled' })
       .eq('id', params!.id)

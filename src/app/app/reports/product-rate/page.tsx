@@ -63,7 +63,7 @@ export default function ProductRatePage() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [currentYear])
 
   const sorted = [...products].sort((a, b) => b[sort] - a[sort])
   const maxAmount = Math.max(...products.map(p => p.won_amount), 1)

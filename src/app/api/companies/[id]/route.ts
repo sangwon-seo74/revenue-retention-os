@@ -2,7 +2,6 @@
 // PATCH  /api/companies/[id]  — 고객사 수정
 // DELETE /api/companies/[id]  — 고객사 삭제 (admin 전용)
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, requireId } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
@@ -147,7 +146,7 @@ export const DELETE = withAuth(async (req, ctx, params) => {
   }
 
   // 소프트 딜리트 (churned 상태 변경)
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('companies')
     .update({ status: 'churned' })
     .eq('id', params!.id)

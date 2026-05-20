@@ -2,7 +2,6 @@
 // PATCH  /api/activities/[id]
 // DELETE /api/activities/[id]
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, requireId } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'

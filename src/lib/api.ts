@@ -4,7 +4,7 @@
 // ============================================================
 
 import { NextRequest } from 'next/server'
-import { ok, err } from '@/lib/utils'
+import { err } from '@/lib/utils'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
 
 // ─── 테넌트 인증 컨텍스트 ────────────────────────────────

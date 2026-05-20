@@ -1,7 +1,6 @@
 // GET  /api/contracts  — 계약 목록
 // POST /api/contracts  — 계약 생성
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, parsePagination } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'

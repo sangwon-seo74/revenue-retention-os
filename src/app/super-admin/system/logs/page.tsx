@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import {
-  Activity, Search, Monitor, Smartphone, Globe,
-  CheckCircle2, Clock, AlertTriangle, Filter,
-  Plus, Bell, Megaphone, Wrench, X, Save
+  Search,
+  CheckCircle2,
+  Plus, Bell, Megaphone, Wrench, X
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 

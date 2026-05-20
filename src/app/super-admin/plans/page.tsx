@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import {
-  Layers, Users, Building2, MessageSquare, CheckCircle2,
-  Pencil, Save, X, AlertTriangle, DollarSign
+  Users, Building2, MessageSquare,
+  Pencil, X, AlertTriangle
 } from 'lucide-react'
 import { cn, formatAmount } from '@/lib/utils'
 import type { Plan } from '@/types/domain'

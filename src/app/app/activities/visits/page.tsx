@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MapPin, Plus, Search, Users, Clock, ChevronRight } from 'lucide-react'
+import { MapPin, Plus, Users, Clock, ChevronRight } from 'lucide-react'
 import { formatDate, formatRelative } from '@/lib/utils'
 import type { Activity } from '@/types/domain'
 

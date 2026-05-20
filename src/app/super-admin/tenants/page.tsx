@@ -3,9 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import {
-  Building2, Plus, Search, Filter, ChevronRight,
-  CheckCircle2, XCircle, Clock, AlertTriangle,
-  Users, FileText, MoreHorizontal, ToggleLeft, ToggleRight
+  Building2, Plus, Search, ChevronRight,
+  CheckCircle2, XCircle, Clock, AlertTriangle
 } from 'lucide-react'
 import { cn, formatAmount, formatDate } from '@/lib/utils'
 import type { SubscriptionStatus } from '@/types/domain'

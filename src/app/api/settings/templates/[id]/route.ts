@@ -2,7 +2,6 @@
 // PATCH  /api/settings/templates/[id]
 // DELETE /api/settings/templates/[id]
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, requireId } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
@@ -76,7 +75,7 @@ export const DELETE = withAuth(async (req, ctx, params) => {
 
   if ((count ?? 0) > 0) {
     // 소프트 딜리트
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('message_templates')
       .update({ is_active: false })
       .eq('id', params!.id)

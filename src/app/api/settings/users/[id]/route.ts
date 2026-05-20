@@ -2,7 +2,6 @@
 // PATCH  /api/settings/users/[id]  — 역할/팀/활성화 수정
 // DELETE /api/settings/users/[id]  — 비활성화 (소프트 딜리트)
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, requireId } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'

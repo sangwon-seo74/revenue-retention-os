@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import {
-  Users, CheckSquare, AlertTriangle, Clock, TrendingUp,
-  ChevronDown, ChevronUp, Filter, BarChart2, User
+  AlertTriangle,
+  ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 import type { TaskStatus, TaskPriority } from '@/types/domain'

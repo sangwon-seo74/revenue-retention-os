@@ -3,10 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import {
-  ArrowLeft, Building2, CheckCircle2, XCircle, AlertTriangle,
-  Clock, Users, FileText, CreditCard, Activity, BarChart2,
-  ToggleLeft, ToggleRight, Mail, RefreshCw, ExternalLink,
-  Shield, Pencil
+  ArrowLeft, CheckCircle2, XCircle,
+  ToggleRight, Mail, RefreshCw,
+  Pencil
 } from 'lucide-react'
 import { cn, formatAmount, formatDate } from '@/lib/utils'
 import type { SubscriptionStatus } from '@/types/domain'
@@ -313,7 +312,7 @@ function TabUsers() {
 }
 
 // ─── 메인 ────────────────────────────────────────────────
-export default function TenantDetailPage(_props: { params: Promise<{ id: string }> }) {
+export default function TenantDetailPage() {
   const [activeTab, setActiveTab] = useState('기본정보')
 
   const tabContent: Record<string, React.ReactNode> = {

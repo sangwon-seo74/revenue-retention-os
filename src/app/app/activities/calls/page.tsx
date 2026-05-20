@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import {
   Phone, Plus, Search,
   Clock, User,
-  CheckCircle, XCircle,
+  CheckCircle,
   PhoneMissed, PhoneOff, CalendarClock, Loader2
 } from 'lucide-react'
 import {
   CALL_RESULT_LABEL, CALL_RESULT_CLASS,
 } from '@/constants/domain'
-import { formatDateTime, formatDuration, formatRelative, formatDate } from '@/lib/utils'
+import { formatDuration, formatRelative, formatDate } from '@/lib/utils'
 import type { Activity } from '@/types/domain'
 
 function CallResultIcon({ result }: { result: string | null }) {

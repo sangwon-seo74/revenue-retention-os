@@ -7,7 +7,7 @@ import {
   RefreshCw, Building2, ArrowRight, Plus,
   ChevronRight, Clock, Loader2, Target
 } from 'lucide-react'
-import { cn, formatAmount, formatDate, calcDday, getDdayClass } from '@/lib/utils'
+import { cn, formatAmount, formatDate, calcDday } from '@/lib/utils'
 
 const RISK_CLS: Record<string, string> = {
   high:   'bg-[#3d1a1a] text-[#FF7B72] border-[#7f2020]',

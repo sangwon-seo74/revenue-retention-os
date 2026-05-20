@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { TrendingUp, TrendingDown, Loader2 } from 'lucide-react'
-import { cn, formatAmount } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 type MonthRow = {
   month: string
@@ -75,7 +75,7 @@ export default function ArrMovementPage() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [currentYear])
 
   const maxBase = Math.max(...monthly.map(m => m.base_arr), 1)
 

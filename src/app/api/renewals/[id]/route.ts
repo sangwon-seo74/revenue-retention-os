@@ -1,10 +1,9 @@
 // GET / PATCH / DELETE /api/renewals/[id]
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, requireId } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
-import type { RenewalStatus, RiskLevel } from '@/types/domain'
+import type { RenewalStatus } from '@/types/domain'
 
 const VALID_STATUSES: RenewalStatus[] = ['pending', 'contacted', 'negotiating', 'won', 'lost']
 const VALID_RESULTS = ['renewed', 'churned', 'upsell', 'downgrade'] as const

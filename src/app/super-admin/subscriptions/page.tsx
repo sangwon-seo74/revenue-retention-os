@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import {
-  CreditCard, AlertTriangle, Clock, CheckCircle2,
-  XCircle, ChevronRight, Filter, RefreshCw, TrendingDown
+  AlertTriangle, Clock, CheckCircle2,
+  XCircle, ChevronRight
 } from 'lucide-react'
 import { cn, formatAmount, formatDate } from '@/lib/utils'
 import type { SubscriptionStatus } from '@/types/domain'

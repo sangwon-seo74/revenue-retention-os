@@ -5,7 +5,7 @@ import {
   Building2, Globe, Phone, Mail, MapPin,
   Shield, AlertTriangle, CheckCircle2, Pencil, Save, X
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+
 
 const MOCK_TENANT = {
   id: 't1', name: '(주)테크솔루션', biz_no: '123-45-67890',

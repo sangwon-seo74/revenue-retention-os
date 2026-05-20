@@ -77,7 +77,7 @@ export default function RenewalRatePage() {
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [])
+  }, [currentYear])
 
   const hasData = !loading && monthly.length > 0
 

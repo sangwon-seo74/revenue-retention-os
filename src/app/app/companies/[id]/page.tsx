@@ -51,9 +51,6 @@ type Message = {
 // ─── Constants ────────────────────────────────────────────
 const TABS = ['개요', '담당자', '계약', '활동이력', '발송이력']
 
-const ACTIVITY_ICON: Record<string, React.ElementType> = {
-  call: Phone, visit: Users, email: Mail, sms: Mail, kakao: Mail,
-}
 const ACTIVITY_ICON_CLS: Record<string, string> = {
   call:  'bg-[#1c2d4a] text-[#58A6FF]',
   visit: 'bg-[#1c3528] text-[#3FB950]',
@@ -81,7 +78,6 @@ const CONTRACT_STATUS_CLS: Record<ContractStatus, string> = {
 const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
   active: '활성', expired: '만료', cancelled: '해지', renewed: '갱신됨'
 }
-const P_CLS: Record<string, string> = { high: 'bg-[#FF7B72]', medium: 'bg-[#E3B341]', low: 'bg-dk-dim' }
 const CH_ICON: Record<string, string> = { email: '📧', sms: '💬', kakao: '💛' }
 const MSG_STATUS_CLS: Record<string, string> = {
   sent: 'text-dk-dim', delivered: 'text-dk-blue', failed: 'text-[#FF7B72]', read: 'text-[#3FB950]'
@@ -410,122 +406,6 @@ function DeleteContactModal({
             {deleting ? '삭제 중...' : '삭제'}
           </button>
         </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Add Task Modal (company-scoped) ─────────────────────
-function AddTaskModal({
-  companyId,
-  onClose,
-  onSuccess,
-}: {
-  companyId: string
-  onClose: () => void
-  onSuccess: (task: TaskItem) => void
-}) {
-  const [form, setForm] = useState({
-    title: '', type: '', priority: 'medium', due_at: '',
-  })
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.title.trim()) { setError('제목은 필수입니다'); return }
-    setSubmitting(true)
-    setError(null)
-
-    const res = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        company_id: companyId,
-        title:      form.title.trim(),
-        type:       form.type     || null,
-        priority:   form.priority,
-        due_at:     form.due_at   || null,
-      }),
-    })
-    const json = await res.json().catch(() => null)
-    if (!res.ok) {
-      setError(json?.error?.message ?? '등록 중 오류가 발생했습니다')
-      setSubmitting(false)
-      return
-    }
-    onSuccess({
-      id:       json.data.id,
-      title:    json.data.title,
-      type:     json.data.type,
-      priority: json.data.priority,
-      status:   json.data.status,
-      due_at:   json.data.due_at,
-      is_auto:  false,
-    })
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-dk-surface border border-dk-border rounded-2xl shadow-2xl w-full max-w-md p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-semibold text-dk-text">업무 추가</h3>
-          <button onClick={onClose} className="text-dk-muted hover:text-dk-text"><X className="w-4 h-4" /></button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-dk-muted mb-1 block">제목 <span className="text-[#FF7B72]">*</span></label>
-            <input autoFocus value={form.title} onChange={e => set('title', e.target.value)}
-              placeholder="업무 내용 입력..." className={INPUT_CLS} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-dk-muted mb-1 block">유형</label>
-              <select value={form.type} onChange={e => set('type', e.target.value)} className={INPUT_CLS}>
-                <option value="">일반</option>
-                <option value="call">통화</option>
-                <option value="visit">방문</option>
-                <option value="email">이메일</option>
-                <option value="renewal">갱신</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-dk-muted mb-1 block">우선순위</label>
-              <select value={form.priority} onChange={e => set('priority', e.target.value)} className={INPUT_CLS}>
-                <option value="high">높음</option>
-                <option value="medium">보통</option>
-                <option value="low">낮음</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-dk-muted mb-1 block">마감일</label>
-            <input type="date" value={form.due_at} onChange={e => set('due_at', e.target.value)}
-              className={INPUT_CLS} />
-          </div>
-
-          {error && (
-            <p className="text-xs text-[#FF7B72] bg-[#3d1a1a] border border-[#7f2020] rounded-lg px-3 py-2">{error}</p>
-          )}
-
-          <div className="flex gap-2 pt-2">
-            <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 text-sm text-dk-muted border border-dk-border rounded-lg hover:bg-dk-surface2 transition-colors">
-              취소
-            </button>
-            <button type="submit" disabled={!form.title.trim() || submitting}
-              className="flex-1 py-2.5 text-sm text-white bg-[#1f6feb] rounded-lg hover:bg-[#388bfd] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors">
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {submitting ? '등록 중...' : '업무 등록'}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   )
@@ -1606,9 +1486,11 @@ function TabActivityHistory({
   const [tasks, setTasks]             = useState(initialTasks)
 
   useEffect(() => {
-    const knownIds = new Set(localActivities.map(a => a.id))
-    const added = activities.filter(a => !knownIds.has(a.id))
-    if (added.length > 0) setLocalActivities(prev => [...added, ...prev])
+    setLocalActivities(prev => {
+      const knownIds = new Set(prev.map(a => a.id))
+      const added = activities.filter(a => !knownIds.has(a.id))
+      return added.length > 0 ? [...added, ...prev] : prev
+    })
   }, [activities])
   const [showUnified, setShowUnified] = useState(false)
   // 업무 ··· 메뉴
@@ -1856,178 +1738,6 @@ const TASK_STATUS_CLS: Record<string, string> = {
 }
 const TASK_STATUS_LABEL: Record<string, string> = {
   todo: '미완료', in_progress: '진행중', done: '완료', cancelled: '취소',
-}
-
-// ─── Tab: 업무 ────────────────────────────────────────────
-function TabTasks({ tasks: initialTasks, companyId }: { tasks: TaskItem[]; companyId: string }) {
-  const [tasks, setTasks]           = useState(initialTasks)
-  const [showModal, setShowModal]   = useState(false)
-  const [openMenu, setOpenMenu]     = useState<string | null>(null)
-  const [menuPos, setMenuPos]       = useState<{ top: number; right: number } | null>(null)
-  const [editTask, setEditTask]     = useState<TaskItem | null>(null)
-  const [deleteTask, setDeleteTask] = useState<TaskItem | null>(null)
-
-  const [from, setFrom]             = useState('')
-  const [to, setTo]                 = useState('')
-  const [searchResult, setSearchResult] = useState<TaskItem[] | null>(null)
-  const [searching, setSearching]   = useState(false)
-
-  const handleSuccess = (task: TaskItem) => {
-    setTasks(prev => [task, ...prev])
-    setShowModal(false)
-  }
-
-  const handleEditSuccess = (updated: TaskItem) => {
-    setTasks(prev => prev.map(t => t.id === updated.id ? updated : t))
-    if (searchResult) setSearchResult(prev => prev!.map(t => t.id === updated.id ? updated : t))
-    setEditTask(null)
-  }
-
-  const handleDeleteSuccess = (id: string) => {
-    setTasks(prev => prev.filter(t => t.id !== id))
-    if (searchResult) setSearchResult(prev => prev!.filter(t => t.id !== id))
-    setDeleteTask(null)
-  }
-
-  const handleSearch = async () => {
-    if (!from || !to) return
-    setSearching(true)
-    const res = await fetch(`/api/tasks?company_id=${companyId}&from=${from}&to=${to}&limit=200`)
-    const json = await res.json().catch(() => null)
-    setSearchResult(json?.data?.data ?? json?.data ?? [])
-    setSearching(false)
-  }
-
-  const handleClear = () => {
-    setFrom(''); setTo(''); setSearchResult(null)
-  }
-
-  const displayTasks = searchResult ?? tasks
-  const isSearch = searchResult !== null
-
-  return (
-    <div className="flex flex-col h-full gap-2">
-      {/* 검색바 — 고정 */}
-      <div className="shrink-0 flex items-center gap-2 flex-wrap pb-1">
-        <input type="date" value={from} onChange={e => setFrom(e.target.value)}
-          className="text-xs bg-dk-surface2 border border-dk-border rounded-lg px-2 py-1.5 text-dk-text focus:outline-none focus:border-dk-blue" />
-        <span className="text-xs text-dk-dim">~</span>
-        <input type="date" value={to} onChange={e => setTo(e.target.value)}
-          className="text-xs bg-dk-surface2 border border-dk-border rounded-lg px-2 py-1.5 text-dk-text focus:outline-none focus:border-dk-blue" />
-        <button
-          onClick={handleSearch} disabled={!from || !to || searching}
-          className="text-xs px-3 py-1.5 rounded-lg border border-dk-border text-dk-text hover:bg-dk-surface2 disabled:opacity-40 transition-colors flex items-center gap-1"
-        >
-          {searching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : '조회'}
-        </button>
-        {isSearch && (
-          <button onClick={handleClear} className="text-xs text-dk-muted hover:text-dk-text transition-colors">
-            초기화
-          </button>
-        )}
-        <div className="flex-1" />
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-1.5 text-xs text-dk-blue border border-[#2d4a7a] px-3 py-1.5 rounded-lg hover:bg-[#1c2d4a] transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" /> 업무 추가
-        </button>
-      </div>
-
-      {isSearch && (
-        <p className="shrink-0 text-[10px] text-dk-muted">{from} ~ {to} 등록 업무 {displayTasks.length}건</p>
-      )}
-
-      {/* 목록 — 스크롤 */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pb-20">
-        {displayTasks.length === 0 && (
-          <p className="text-sm text-dk-dim text-center py-8">{isSearch ? '해당 기간에 업무가 없습니다' : '업무가 없습니다'}</p>
-        )}
-        {displayTasks.map(t => (
-          <div key={t.id} className="relative flex items-center gap-3 bg-dk-surface border border-dk-border rounded-xl px-4 py-3">
-            <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', P_CLS[t.priority] ?? 'bg-dk-dim')} />
-            <p className="flex-1 text-sm text-dk-text">{t.title}</p>
-            <span className={cn('text-[10px] px-1.5 py-0.5 rounded border shrink-0', TASK_STATUS_CLS[t.status] ?? 'text-dk-dim border-dk-border')}>
-              {TASK_STATUS_LABEL[t.status] ?? t.status}
-            </span>
-            {t.is_auto && <span className="text-[9px] border border-[#2d4a7a] text-dk-blue px-1 py-0.5 rounded shrink-0">자동</span>}
-            {t.type && (
-              <span className="text-[10px] text-dk-dim px-1.5 py-0.5 bg-dk-surface2 rounded border border-dk-border shrink-0">
-                {t.type === 'call' ? '통화' : t.type === 'visit' ? '방문' : t.type === 'email' ? '이메일' : t.type === 'renewal' ? '갱신' : t.type}
-              </span>
-            )}
-            {t.due_at && <p className="text-xs text-dk-dim shrink-0">{formatDate(t.due_at)}</p>}
-            <div className="shrink-0">
-              <button
-                onClick={(e) => {
-                  if (openMenu === t.id) {
-                    setOpenMenu(null); setMenuPos(null)
-                  } else {
-                    const rect = e.currentTarget.getBoundingClientRect()
-                    const dropH = 80
-                    const top = window.innerHeight - rect.bottom < dropH + 8
-                      ? rect.top - dropH - 4
-                      : rect.bottom + 4
-                    setMenuPos({ top, right: window.innerWidth - rect.right })
-                    setOpenMenu(t.id)
-                  }
-                }}
-                className="p-1 rounded text-dk-muted hover:text-dk-text hover:bg-dk-surface2 transition-colors"
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ··· 드롭다운 — overflow 탈출용 fixed */}
-      {openMenu && menuPos && (() => {
-        const t = displayTasks.find(x => x.id === openMenu)
-        if (!t) return null
-        return (
-          <>
-            <div className="fixed inset-0 z-40" onClick={() => { setOpenMenu(null); setMenuPos(null) }} />
-            <div
-              className="fixed z-50 w-24 bg-dk-surface border border-dk-border rounded-lg shadow-xl overflow-hidden"
-              style={{ top: menuPos.top, right: menuPos.right }}
-            >
-              <button
-                onClick={() => { setEditTask(t); setOpenMenu(null); setMenuPos(null) }}
-                className="w-full text-left px-3 py-2 text-xs text-dk-text hover:bg-dk-surface2 transition-colors"
-              >수정</button>
-              <button
-                onClick={() => { setDeleteTask(t); setOpenMenu(null); setMenuPos(null) }}
-                className="w-full text-left px-3 py-2 text-xs text-[#FF7B72] hover:bg-dk-surface2 transition-colors"
-              >삭제</button>
-            </div>
-          </>
-        )
-      })()}
-
-      {showModal && (
-        <AddTaskModal
-          companyId={companyId}
-          onClose={() => setShowModal(false)}
-          onSuccess={handleSuccess}
-        />
-      )}
-      {editTask && (
-        <EditTaskModal
-          task={editTask}
-          onClose={() => setEditTask(null)}
-          onSuccess={handleEditSuccess}
-        />
-      )}
-      {deleteTask && (
-        <DeleteTaskModal
-          task={deleteTask}
-          onClose={() => setDeleteTask(null)}
-          onSuccess={handleDeleteSuccess}
-        />
-      )}
-    </div>
-  )
 }
 
 // ─── Main ─────────────────────────────────────────────────

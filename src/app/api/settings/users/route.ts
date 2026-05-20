@@ -1,7 +1,6 @@
 // GET  /api/settings/users  — 테넌트 사용자 목록 (플랜 한도 포함)
 // POST /api/settings/users  — 사용자 초대
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, parsePagination } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
@@ -43,7 +42,7 @@ export const GET = withAuth(async (req, ctx) => {
     .in('status', ['active', 'trialing'])
     .single()
 
-  const maxUsers = (sub?.plan as any)?.max_users ?? null
+  const maxUsers = (sub?.plan as unknown as { max_users: number | null } | null)?.max_users ?? null
 
   return ok({
     data: data ?? [],
@@ -80,7 +79,7 @@ export const POST = withAuth(async (req, ctx) => {
     .in('status', ['active', 'trialing'])
     .single()
 
-  const maxUsers = (sub?.plan as any)?.max_users
+  const maxUsers = (sub?.plan as unknown as { max_users: number | null } | null)?.max_users
   if (maxUsers) {
     const { count: current } = await supabase
       .from('users')

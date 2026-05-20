@@ -1,7 +1,6 @@
 // GET  /api/activities  — 활동 목록
 // POST /api/activities  — 활동 기록 생성
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, parsePagination } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'

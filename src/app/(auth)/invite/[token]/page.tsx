@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Eye, EyeOff, CheckCircle2, AlertCircle,
-  Loader2, UserCircle2, Building2
+  Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 

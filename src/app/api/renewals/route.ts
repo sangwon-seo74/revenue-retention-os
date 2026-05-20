@@ -1,7 +1,6 @@
 // GET  /api/renewals  — 갱신 파이프라인 목록
 // POST /api/renewals  — 갱신 레코드 수동 생성
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, parsePagination } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
@@ -16,7 +15,6 @@ export const GET = withAuth(async (req, ctx) => {
   const risk        = searchParams.get('risk') as RiskLevel | null
   const company_id  = searchParams.get('company_id')
   const user_id     = searchParams.get('user_id')
-  const team_id     = searchParams.get('team_id')
   const days_to       = Number(searchParams.get('days_to') ?? 90)
   const include_closed = searchParams.get('include_closed') === 'true'
 

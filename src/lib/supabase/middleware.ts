@@ -29,7 +29,6 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   // 인증 필요 경로 보호
-  const isAuthPage = request.nextUrl.pathname.startsWith('/login')
   const isAppPage = request.nextUrl.pathname.startsWith('/app')
   const isSuperAdmin = request.nextUrl.pathname.startsWith('/super-admin')
 

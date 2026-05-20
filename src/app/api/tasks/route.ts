@@ -1,7 +1,6 @@
 // GET  /api/tasks  — 업무 목록
 // POST /api/tasks  — 업무 생성
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, parsePagination } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'

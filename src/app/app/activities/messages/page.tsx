@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { MessageSquare, Mail, Phone, Search, Plus, Check, X, Eye } from 'lucide-react'
+import { MessageSquare, Mail, Phone, Search, Plus, Check, Eye } from 'lucide-react'
 import {
   MESSAGE_CHANNEL_LABEL, MESSAGE_STATUS_LABEL, MESSAGE_STATUS_CLASS,
 } from '@/constants/domain'
-import { formatDateTime } from '@/lib/utils'
 import type { Message } from '@/types/domain'
 
 const MOCK_MESSAGES: Message[] = [

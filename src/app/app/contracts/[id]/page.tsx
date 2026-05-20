@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   ArrowLeft, FileText, Users, CheckCircle2, Clock,
   Plus, Pencil, ChevronRight, Copy, MoreHorizontal,
-  Loader2, AlertCircle, RefreshCw, Trash2, X,
+  Loader2, RefreshCw, Trash2, X,
 } from 'lucide-react'
 import { cn, formatAmount, formatDate, calcDday, getDdayClass } from '@/lib/utils'
 import type { ContractStatus, RenewalStatus, RiskLevel } from '@/types/domain'

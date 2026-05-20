@@ -2,7 +2,6 @@
 // 사용자를 테넌트에 초대하는 이메일 발송
 // admin 이상만 호출 가능
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth } from '@/lib/api'
 import { createInviteToken } from '@/lib/invite-token'
@@ -33,7 +32,7 @@ export const POST = withAuth(async (req, ctx) => {
   const body = await req.json().catch(() => null)
   if (!body) return err('INVALID_BODY', '요청 본문이 올바르지 않습니다')
 
-  const { email, name, role, team_id } = body
+  const { email, name, role } = body
 
   // 유효성 검증
   if (!email?.trim()) return err('VALIDATION', '이메일은 필수입니다')

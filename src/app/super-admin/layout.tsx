@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Building2, CreditCard, Receipt,
-  Layers, Settings, ChevronRight, Shield, LogOut,
+  Layers, ChevronRight, Shield, LogOut,
   Bell, Search, Activity
 } from 'lucide-react'
 import { cn } from '@/lib/utils'

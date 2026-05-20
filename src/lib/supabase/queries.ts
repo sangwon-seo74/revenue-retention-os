@@ -5,9 +5,7 @@
 
 import { createServerComponentClient } from './server'
 import type {
-  Company, Contract, Renewal, Activity, Task,
-  User, Team, Product, MessageTemplate, ApiIntegration,
-  RiskLevel, RenewalStatus, ContractStatus,
+  RiskLevel, RenewalStatus,
 } from '@/types/domain'
 
 // ─── 공통 타입 ───────────────────────────────────────────
@@ -168,7 +166,7 @@ export async function getTasks(opts: QueryOptions & {
   limit?: number
 }) {
   const supabase = await createServerComponentClient()
-  const { tenantId, userId, role, mine, status, priority, overdue, page = 1, limit = 50 } = opts
+  const { tenantId, userId, mine, status, priority, overdue, page = 1, limit = 50 } = opts
 
   let query = supabase
     .from('tasks')
@@ -198,7 +196,6 @@ export async function getDashboardSummary(opts: QueryOptions) {
   const { tenantId, userId, role } = opts
   const today = new Date().toISOString().split('T')[0]
   const plus7  = new Date(Date.now() + 7  * 86400000).toISOString().split('T')[0]
-  const plus14 = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]
   const plus30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
 
   const isSales = role === 'sales' && !!userId

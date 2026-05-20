@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft, CheckCircle2, XCircle, Clock, RefreshCw,
-  Building2, Receipt, CreditCard, FileText, AlertTriangle, Save
+  Receipt, AlertTriangle, Save
 } from 'lucide-react'
 import { cn, formatAmount, formatDate } from '@/lib/utils'
 import type { InvoiceStatus } from '@/types/domain'
@@ -47,7 +47,7 @@ function StatusBadge({ status }: { status: InvoiceStatus }) {
 }
 
 // ─── 메인 ────────────────────────────────────────────────
-export default function InvoiceDetailPage(_props: { params: Promise<{ id: string }> }) {
+export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState(MOCK_INVOICE)
   const [memo, setMemo] = useState(invoice.memo ?? '')
   const [processing, setProcessing] = useState(false)

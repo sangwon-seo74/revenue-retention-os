@@ -1,14 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import {
-  TrendingUp, TrendingDown, Users, Building2, CreditCard,
-  AlertTriangle, CheckCircle2, Clock, XCircle, ArrowRight,
-  DollarSign, Activity, Zap, RefreshCw
+  TrendingUp, TrendingDown, Building2,
+  AlertTriangle, Clock, ArrowRight,
+  DollarSign, Zap
 } from 'lucide-react'
 import { cn, formatAmount, formatDate } from '@/lib/utils'
-import type { SubscriptionStatus } from '@/types/domain'
 
 // ─── Mock 데이터 ──────────────────────────────────────────
 const MOCK_METRICS = {

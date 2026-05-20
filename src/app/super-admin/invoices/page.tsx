@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import {
-  Receipt, CheckCircle2, XCircle, Clock, RefreshCw,
-  AlertTriangle, ChevronRight, Download
+  CheckCircle2, XCircle, Clock, RefreshCw,
+  AlertTriangle, ChevronRight
 } from 'lucide-react'
 import { cn, formatAmount, formatDate } from '@/lib/utils'
 import type { InvoiceStatus } from '@/types/domain'

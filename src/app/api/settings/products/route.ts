@@ -1,7 +1,6 @@
 // GET  /api/settings/products  — 제품 목록 (활성 계약 수 포함)
 // POST /api/settings/products  — 제품 생성
 
-import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { withAuth, parsePagination } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
