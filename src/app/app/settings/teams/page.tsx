@@ -1,36 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
-  Users, Plus, Pencil, Trash2, UserCircle2, Check, X, MoreHorizontal
+  Users, Plus, Pencil, Trash2, UserCircle2, Check, X, MoreHorizontal, Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Team } from '@/types/domain'
 
-type TeamWithMeta = Team & { member_count: number; manager_name: string | null }
-type Member = { id: string; name: string; role: string; email: string }
-
-const MOCK_TEAMS: TeamWithMeta[] = [
-  { id: 't1', tenant_id: 'tn1', name: '서울 영업팀',  member_count: 4, manager_name: '김팀장', created_at: '2024-01-15T00:00:00Z' },
-  { id: 't2', tenant_id: 'tn1', name: '경기 영업팀',  member_count: 3, manager_name: '이팀장', created_at: '2024-02-01T00:00:00Z' },
-  { id: 't3', tenant_id: 'tn1', name: '고객성공팀',   member_count: 2, manager_name: null,     created_at: '2024-03-10T00:00:00Z' },
-]
-const MOCK_MEMBERS: Record<string, Member[]> = {
-  t1: [
-    { id: 'u1', name: '김영업', role: 'manager', email: 'kim@example.com' },
-    { id: 'u2', name: '이담당', role: 'sales',   email: 'lee@example.com' },
-    { id: 'u3', name: '박상담', role: 'sales',   email: 'park@example.com' },
-    { id: 'u4', name: '최영업', role: 'sales',   email: 'choi@example.com' },
-  ],
-  t2: [
-    { id: 'u5', name: '이팀장', role: 'manager', email: 'lee2@example.com' },
-    { id: 'u6', name: '정영업', role: 'sales',   email: 'jung@example.com' },
-    { id: 'u7', name: '한담당', role: 'sales',   email: 'han@example.com' },
-  ],
-  t3: [
-    { id: 'u8', name: '신CS', role: 'sales', email: 'shin@example.com' },
-    { id: 'u9', name: '오CS',  role: 'sales', email: 'oh@example.com' },
-  ],
+type TeamWithMeta = {
+  id: string; name: string; created_at: string
+  member_count: number; manager_name: string | null
 }
 
 const ROLE_LABEL: Record<string, string> = { admin: '관리자', manager: '팀장', sales: '영업' }
@@ -128,29 +106,56 @@ function TeamCard({ team, selected, onSelect, onEdit, onDelete }: {
 }
 
 export default function TeamsSettingsPage() {
-  const [teams, setTeams]           = useState(MOCK_TEAMS)
-  const [selectedTeam, setSelected] = useState<string>(MOCK_TEAMS[0].id)
+  const [teams, setTeams]           = useState<TeamWithMeta[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [selectedTeam, setSelected] = useState<string>('')
   const [showModal, setShowModal]   = useState(false)
   const [editingTeam, setEditing]   = useState<TeamWithMeta | null>(null)
 
-  const members = MOCK_MEMBERS[selectedTeam] ?? []
-  const team    = teams.find(t => t.id === selectedTeam)
+  const load = () => {
+    setLoading(true)
+    fetch('/api/settings/teams')
+      .then(r => r.json())
+      .then(json => {
+        const rows = (json.data ?? []) as TeamWithMeta[]
+        setTeams(rows)
+        if (rows.length > 0 && !selectedTeam) setSelected(rows[0].id)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }
+  useEffect(() => { load() }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleAdd = (name: string) => {
-    setTeams(prev => [...prev, {
-      id: `t${Date.now()}`, tenant_id: 'tn1', name,
-      member_count: 0, manager_name: null, created_at: new Date().toISOString()
-    }])
+  // 멤버는 별도 API가 없어 useState로 빈 배열 유지 (settings/users에서 확인 가능)
+  const members: { id: string; name: string; role: string; email: string }[] = []
+  const team = teams.find(t => t.id === selectedTeam)
+
+  const handleAdd = async (name: string) => {
+    await fetch('/api/settings/teams', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
     setShowModal(false)
+    load()
   }
-  const handleEdit = (name: string) => {
-    setTeams(prev => prev.map(t => t.id === editingTeam?.id ? { ...t, name } : t))
+  const handleEdit = async (name: string) => {
+    if (!editingTeam) return
+    await fetch(`/api/settings/teams/${editingTeam.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
     setEditing(null)
+    load()
   }
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('팀을 삭제하면 소속 멤버의 팀 정보가 해제됩니다. 계속할까요?')) return
-    setTeams(prev => prev.filter(t => t.id !== id))
-    if (selectedTeam === id) setSelected(teams[0]?.id ?? '')
+    await fetch(`/api/settings/teams/${id}`, { method: 'DELETE' })
+    if (selectedTeam === id) setSelected(teams.find(t => t.id !== id)?.id ?? '')
+    load()
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-64"><Loader2 className="w-6 h-6 animate-spin text-dk-muted" /></div>
   }
 
   return (

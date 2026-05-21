@@ -49,8 +49,11 @@ export const GET = withAuth(async (req, ctx) => {
       .select('company_id, expires_at, final_amount')
       .in('company_id', rows.map(c => c.id))
       .eq('status', 'active')
+      .order('expires_at', { ascending: false })
     for (const c of (ac ?? []) as { company_id: string; expires_at: string; final_amount: number }[]) {
-      activeContractMap[c.company_id] = { expires_at: c.expires_at, final_amount: c.final_amount }
+      if (!activeContractMap[c.company_id]) {
+        activeContractMap[c.company_id] = { expires_at: c.expires_at, final_amount: c.final_amount }
+      }
     }
   }
   const enriched = rows.map(c => ({ ...c, active_contract: activeContractMap[c.id] ?? null }))

@@ -94,6 +94,7 @@ function RenewalKanbanCard({ renewal }: { renewal: RenewalCard }) {
 export default function RenewalsPage() {
   const [loading, setLoading]       = useState(true)
   const [renewals, setRenewals]     = useState<RenewalCard[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [userFilter, setUserFilter] = useState<string>('all')
   const [riskFilter, setRiskFilter] = useState<RiskLevel | 'all'>('all')
 
@@ -112,6 +113,7 @@ export default function RenewalsPage() {
           assigned_user: (r.assigned_user as { name: string } | null)?.name ?? '',
         }))
         setRenewals(mapped)
+        setTotalCount(json.data?.count ?? 0)
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -155,6 +157,12 @@ export default function RenewalsPage() {
           </p>
         </div>
       </div>
+
+      {totalCount > renewals.length && (
+        <div className="bg-amber-500/10 border border-[#7a5000] text-[#E3B341] text-xs rounded-lg px-4 py-2.5 shrink-0">
+          전체 {totalCount}건 중 상위 100건만 표시됩니다. 나머지 {totalCount - renewals.length}건은 필터를 좁혀 확인하세요.
+        </div>
+      )}
 
       <div className="flex items-center gap-3 flex-wrap shrink-0">
         <div className="flex gap-1.5">

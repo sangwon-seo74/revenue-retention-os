@@ -4,6 +4,7 @@
 import { ok, err } from '@/lib/utils'
 import { withAuth, parsePagination } from '@/lib/api'
 import { createRouteHandlerClient } from '@/lib/supabase/client'
+import { sendInvite } from '@/lib/invite'
 import type { UserRole } from '@/types/domain'
 
 export const GET = withAuth(async (req, ctx) => {
@@ -99,23 +100,24 @@ export const POST = withAuth(async (req, ctx) => {
     .eq('tenant_id', ctx.tenantId)
   if ((existing ?? 0) > 0) return err('DUPLICATE', '이미 등록된 이메일입니다', 409)
 
-  // 초대 이메일 발송 (auth/invite API 재사용)
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const res = await fetch(`${baseUrl}/api/auth/invite`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-tenant-id': ctx.tenantId,
-      'x-user-id':   ctx.userId,
-      'x-user-role': ctx.role,
-    },
-    body: JSON.stringify({ email, name, role, team_id }),
-  }).catch(() => null)
+  // 테넌트명 및 초대자명 조회
+  const [{ data: tenant }, { data: inviter }] = await Promise.all([
+    supabase.from('tenants').select('name').eq('id', ctx.tenantId).single(),
+    supabase.from('users').select('name').eq('id', ctx.userId).single(),
+  ])
+  const tenantName  = (tenant  as { name: string } | null)?.name ?? ''
+  const inviterName = (inviter as { name: string } | null)?.name ?? ''
 
-  if (!res || !res.ok) {
-    // 발송 실패해도 초대 기록은 남김
-    return ok({ message: `${email}로 초대를 등록했습니다 (이메일 발송 실패)`, email, role })
-  }
+  // 초대 토큰 생성 + 이메일 발송 (HTTP 라운드트립 없이 직접 호출)
+  await sendInvite(supabase, {
+    email,
+    name,
+    role,
+    tenantId:    ctx.tenantId,
+    userId:      ctx.userId,
+    tenantName,
+    inviterName,
+  })
 
   return ok({ message: `${email}로 초대 이메일을 발송했습니다`, email, role })
 }, { roles: ['admin', 'manager'] })

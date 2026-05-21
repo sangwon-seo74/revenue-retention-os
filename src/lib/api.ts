@@ -5,7 +5,37 @@
 
 import { NextRequest } from 'next/server'
 import { err } from '@/lib/utils'
-import { createRouteHandlerClient } from '@/lib/supabase/client'
+import { createRouteHandlerClient, createServiceClient } from '@/lib/supabase/client'
+
+/** 변경성 요청(POST/PATCH/DELETE)을 audit_logs에 자동 기록.
+ *  fire-and-forget — 실패해도 응답에 영향 없음. */
+async function logUserAction(params: {
+  tenantId: string; userId: string; email: string
+  action: string; ip: string; userAgent: string
+  metadata?: Record<string, unknown>
+}): Promise<void> {
+  try {
+    const supabase = createServiceClient()
+    await supabase.from('audit_logs').insert({
+      tenant_id:  params.tenantId,
+      user_id:    params.userId,
+      email:      params.email,
+      action:     params.action,
+      ip:         params.ip,
+      user_agent: params.userAgent,
+      result:     'success',
+      metadata:   params.metadata ?? null,
+    })
+  } catch (e) {
+    console.error('[Audit log failed]', e)
+  }
+}
+
+function getClientIp(req: NextRequest): string {
+  const fwd = req.headers.get('x-forwarded-for')
+  if (fwd) return fwd.split(',')[0].trim()
+  return req.headers.get('x-real-ip') ?? ''
+}
 
 // ─── 테넌트 인증 컨텍스트 ────────────────────────────────
 export interface AuthContext {
@@ -61,7 +91,27 @@ export function withAuth(
 
     try {
       const params = await context.params
-      return await handler(req, ctx, params)
+      const response = await handler(req, ctx, params)
+
+      // 변경성 메서드는 audit_logs에 fire-and-forget 기록
+      if (['POST', 'PATCH', 'DELETE'].includes(req.method)) {
+        const url = new URL(req.url)
+        // 사용자 이메일은 fetch — 부담스러우면 userId만 기록
+        const { authClient } = createRouteHandlerClient(req)
+        authClient.auth.getUser().then(({ data }) => {
+          logUserAction({
+            tenantId:  ctx.tenantId,
+            userId:    ctx.userId,
+            email:     data.user?.email ?? '',
+            action:    `app.${req.method.toLowerCase()} ${url.pathname.replace('/api/', '')}`,
+            ip:        getClientIp(req),
+            userAgent: req.headers.get('user-agent') ?? '',
+            metadata:  { params, role: ctx.role, status: response.status },
+          })
+        }).catch(() => {})
+      }
+
+      return response
     } catch (e) {
       console.error('[API Error]', e)
       return err('INTERNAL_ERROR', '서버 오류가 발생했습니다', 500)

@@ -1,23 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Search,
   CheckCircle2,
-  Plus, Bell, Megaphone, Wrench, X
+  Plus, Bell, Megaphone, Wrench, X, Loader2
 } from 'lucide-react'
 import { cn, formatDate } from '@/lib/utils'
 
-// ─── Mock 데이터 — 접속 로그 ──────────────────────────────
-const MOCK_LOGS = [
-  { id: 'l1', tenant_name: '(주)테크솔루션', user_name: '김관리자', email: 'admin@techsolution.co.kr', action: 'login', ip: '121.133.24.85', ua: 'Chrome / macOS', at: '2024-06-15T10:23:00Z', result: 'success' },
-  { id: 'l2', tenant_name: '코리아크레딧(주)', user_name: '박이사', email: 'park@koriacredit.co.kr', action: 'login', ip: '222.107.45.12', ua: 'Safari / iPhone', at: '2024-06-15T10:01:00Z', result: 'success' },
-  { id: 'l3', tenant_name: '한국신용정보(주)', user_name: '이팀장', email: 'lee@kcinfo.co.kr', action: 'login', ip: '175.200.12.34', ua: 'Chrome / Windows', at: '2024-06-15T09:45:00Z', result: 'fail' },
-  { id: 'l4', tenant_name: '(주)비즈데이터', user_name: '최담당', email: 'choi@bizdata.co.kr', action: 'login', ip: '14.52.89.200', ua: 'Edge / Windows', at: '2024-06-15T09:30:00Z', result: 'success' },
-  { id: 'l5', tenant_name: '(주)테크솔루션', user_name: '김관리자', email: 'admin@techsolution.co.kr', action: 'settings_change', ip: '121.133.24.85', ua: 'Chrome / macOS', at: '2024-06-15T10:25:00Z', result: 'success' },
-  { id: 'l6', tenant_name: '(주)알파리서치', user_name: '정영업', email: 'jung@alpharesearch.co.kr', action: 'login', ip: '118.45.78.90', ua: 'Chrome / macOS', at: '2024-06-14T17:00:00Z', result: 'success' },
-  { id: 'l7', tenant_name: '대한데이터서비스', user_name: '신대표', email: 'shin@dkdata.co.kr', action: 'login', ip: '58.227.44.11', ua: 'Firefox / Windows', at: '2024-06-14T16:30:00Z', result: 'success' },
-]
+type AccessLog = {
+  id: string; tenant_name: string; user_name: string; email: string
+  action: string; ip: string; ua: string; at: string; result: string
+}
 
 // ─── Mock 데이터 — 공지사항 ───────────────────────────────
 type AnnouncementType = 'notice' | 'maintenance' | 'update'
@@ -32,20 +26,20 @@ type Announcement = {
   created_at: string
 }
 
-const MOCK_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: 'a1', type: 'maintenance',
-    title: '서버 정기 점검 안내 (6/20 02:00~04:00)',
-    content: '서비스 안정화를 위한 정기 점검이 예정되어 있습니다. 해당 시간 동안 서비스 이용이 일시 중단됩니다.',
-    is_active: true, starts_at: '2024-06-19T17:00:00Z', ends_at: '2024-06-20T19:00:00Z', created_at: '2024-06-15T09:00:00Z',
-  },
-  {
-    id: 'a2', type: 'update',
-    title: '갱신 파이프라인 UI 개선 안내',
-    content: '갱신 관리 화면이 업데이트되었습니다. 칸반 보드 성능이 개선되었으며 새로운 필터 기능이 추가되었습니다.',
-    is_active: false, starts_at: '2024-06-10T00:00:00Z', ends_at: '2024-06-17T00:00:00Z', created_at: '2024-06-10T09:00:00Z',
-  },
-]
+/** datetime-local input(타임존 없음)을 ISO 문자열로 변환.
+ *  빈 문자열이면 null 반환. */
+function toIso(dt: string): string | null {
+  if (!dt) return null
+  return new Date(dt).toISOString()
+}
+
+/** ISO 문자열을 datetime-local input 형식("YYYY-MM-DDTHH:mm")으로 변환. */
+function toLocalInput(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 // ─── 탭 ──────────────────────────────────────────────────
 const TABS = ['접속 로그', '공지/점검']
@@ -65,23 +59,65 @@ const ANN_CFG: Record<AnnouncementType, { label: string; cls: string; icon: Reac
   update:      { label: '업데이트', cls: 'bg-green-500/15 text-green-400 border-green-500/30', icon: CheckCircle2 },
 }
 
-// ─── 공지 작성 모달 ───────────────────────────────────────
-function AnnouncementModal({ onClose }: { onClose: () => void }) {
+// ─── 공지 작성/편집 모달 ──────────────────────────────────
+/** 공지/점검 작성·편집 모달.
+ *  editing=null이면 신규 작성(POST), 객체가 들어오면 편집(PATCH) 모드로 동작한다.
+ *  성공 시 부모의 onSaved 콜백으로 목록을 새로고침한다. */
+function AnnouncementModal({
+  editing, onClose, onSaved,
+}: {
+  editing: Announcement | null
+  onClose: () => void
+  onSaved: () => void
+}) {
   const [form, setForm] = useState({
-    type: 'notice' as AnnouncementType,
-    title: '', content: '', starts_at: '', ends_at: '',
+    type:      (editing?.type ?? 'notice') as AnnouncementType,
+    title:     editing?.title ?? '',
+    content:   editing?.content ?? '',
+    starts_at: toLocalInput(editing?.starts_at ?? null),
+    ends_at:   toLocalInput(editing?.ends_at ?? null),
   })
+  const [saving, setSaving] = useState(false)
+  const [error,  setError]  = useState('')
   const set = (k: string, v: string) => setForm(prev => ({ ...prev, [k]: v }))
+
+  const handleSave = async () => {
+    if (!form.title.trim() || !form.content.trim() || !form.starts_at) {
+      setError('제목, 내용, 게시 시작은 필수입니다')
+      return
+    }
+    setSaving(true)
+    setError('')
+    const url    = editing
+      ? `/api/super-admin/announcements/${editing.id}`
+      : '/api/super-admin/announcements'
+    const method = editing ? 'PATCH' : 'POST'
+    const res = await fetch(url, {
+      method, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type:      form.type,
+        title:     form.title.trim(),
+        content:   form.content.trim(),
+        starts_at: toIso(form.starts_at),
+        ends_at:   toIso(form.ends_at),
+      }),
+    })
+    const json = await res.json()
+    if (!res.ok || json.error) { setError(json.error?.message ?? '저장 실패'); setSaving(false); return }
+    onSaved()
+    onClose()
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-gray-800 border border-gray-700 rounded-2xl w-full max-w-lg p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-base font-bold text-white">공지 작성</h2>
+          <h2 className="text-base font-bold text-white">{editing ? '공지 편집' : '공지 작성'}</h2>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-700 text-gray-400">
             <X className="w-4 h-4" />
           </button>
         </div>
+        {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
         <div className="space-y-3.5">
           <div>
             <label className="text-xs text-gray-400 mb-1 block">유형</label>
@@ -125,9 +161,9 @@ function AnnouncementModal({ onClose }: { onClose: () => void }) {
             className="flex-1 py-2 text-sm text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-700">
             취소
           </button>
-          <button onClick={onClose}
-            className="flex-1 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 font-medium">
-            게시
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50">
+            {saving ? '저장 중...' : editing ? '저장' : '게시'}
           </button>
         </div>
       </div>
@@ -136,14 +172,65 @@ function AnnouncementModal({ onClose }: { onClose: () => void }) {
 }
 
 // ─── 메인 ────────────────────────────────────────────────
+/** 시스템 관리 페이지.
+ *  탭: 접속 로그(audit_logs 실데이터) / 공지·점검 관리(announcements 실데이터).
+ *  접속 로그는 검색/액션/결과 필터 + 최대 100건. 공지는 신규/편집/토글/삭제 지원. */
 export default function SystemLogsPage() {
   const [activeTab, setActiveTab] = useState('접속 로그')
   const [q, setQ] = useState('')
+  const [actionFilter, setActionFilter] = useState<string>('all')
+  const [resultFilter, setResultFilter] = useState<string>('all')
+  const [logs, setLogs]               = useState<AccessLog[]>([])
+  const [loadingLogs, setLoadingLogs] = useState(true)
+  const [totalLogs, setTotalLogs]     = useState(0)
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
+  const [editingAnn, setEditingAnn]   = useState<Announcement | null>(null)
+  const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [loadingAnn, setLoadingAnn]   = useState(true)
 
-  const filteredLogs = MOCK_LOGS.filter(l =>
-    !q || l.tenant_name.includes(q) || l.user_name.includes(q) || l.email.includes(q)
-  )
+  const loadAnnouncements = () => {
+    setLoadingAnn(true)
+    fetch('/api/super-admin/announcements')
+      .then(r => r.json())
+      .then(json => setAnnouncements((json.data ?? []) as Announcement[]))
+      .catch(() => {})
+      .finally(() => setLoadingAnn(false))
+  }
+
+  const toggleAnnouncementActive = async (ann: Announcement) => {
+    await fetch(`/api/super-admin/announcements/${ann.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: !ann.is_active }),
+    })
+    loadAnnouncements()
+  }
+
+  const deleteAnnouncement = async (ann: Announcement) => {
+    if (!confirm(`"${ann.title}" 공지를 삭제할까요?`)) return
+    await fetch(`/api/super-admin/announcements/${ann.id}`, { method: 'DELETE' })
+    loadAnnouncements()
+  }
+
+  const loadLogs = () => {
+    setLoadingLogs(true)
+    const params = new URLSearchParams({ limit: '100' })
+    if (q)            params.set('q', q)
+    if (actionFilter && actionFilter !== 'all') params.set('action', actionFilter)
+    if (resultFilter && resultFilter !== 'all') params.set('result', resultFilter)
+    fetch(`/api/super-admin/system/logs?${params}`)
+      .then(r => r.json())
+      .then(json => {
+        setLogs((json.data?.data ?? []) as AccessLog[])
+        setTotalLogs(json.data?.count ?? 0)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingLogs(false))
+  }
+
+  useEffect(() => {
+    if (activeTab === '접속 로그')  loadLogs()
+    if (activeTab === '공지/점검') loadAnnouncements()
+  }, [activeTab, actionFilter, resultFilter])  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="p-6 space-y-5">
@@ -154,7 +241,7 @@ export default function SystemLogsPage() {
         </div>
         {activeTab === '공지/점검' && (
           <button
-            onClick={() => setShowAnnouncementModal(true)}
+            onClick={() => { setEditingAnn(null); setShowAnnouncementModal(true) }}
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" /> 공지 작성
@@ -183,15 +270,42 @@ export default function SystemLogsPage() {
       {/* ── 접속 로그 탭 ── */}
       {activeTab === '접속 로그' && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 max-w-xs">
-            <Search className="w-3.5 h-3.5 text-gray-500" />
-            <input
-              value={q} onChange={e => setQ(e.target.value)}
-              placeholder="테넌트명, 이메일 검색"
-              className="bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none flex-1"
-            />
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 flex-1 max-w-xs">
+              <Search className="w-3.5 h-3.5 text-gray-500" />
+              <input
+                value={q} onChange={e => setQ(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && loadLogs()}
+                placeholder="이메일, IP 검색 (Enter)"
+                className="bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none flex-1"
+              />
+            </div>
+            <div className="flex gap-1.5">
+              {(['all', 'login', 'logout', 'settings_change'] as const).map(a => (
+                <button key={a} onClick={() => setActionFilter(a)}
+                  className={cn('text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors',
+                    actionFilter === a ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-400 border-gray-700 hover:border-gray-600 hover:text-gray-300')}>
+                  {a === 'all' ? '액션 전체' : ACTION_LABEL[a] ?? a}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5">
+              {(['all', 'success', 'fail'] as const).map(r => (
+                <button key={r} onClick={() => setResultFilter(r)}
+                  className={cn('text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors',
+                    resultFilter === r ? 'bg-blue-600 text-white border-blue-600' : 'text-gray-400 border-gray-700 hover:border-gray-600 hover:text-gray-300')}>
+                  {r === 'all' ? '결과 전체' : r === 'success' ? '성공' : '실패'}
+                </button>
+              ))}
+            </div>
+            <span className="text-xs text-gray-500 ml-auto">전체 {totalLogs}건</span>
           </div>
 
+          {loadingLogs ? (
+            <div className="flex items-center justify-center h-48">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+            </div>
+          ) : (
           <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl overflow-hidden">
             <table className="w-full">
               <thead>
@@ -202,7 +316,7 @@ export default function SystemLogsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700/30">
-                {filteredLogs.map(log => (
+                {logs.map(log => (
                   <tr key={log.id} className={cn(
                     'hover:bg-white/3 transition-colors',
                     log.result === 'fail' && 'bg-red-950/10'
@@ -236,14 +350,25 @@ export default function SystemLogsPage() {
                 ))}
               </tbody>
             </table>
+            {logs.length === 0 && (
+              <div className="py-16 text-center">
+                <p className="text-sm text-gray-500">로그가 없습니다</p>
+              </div>
+            )}
           </div>
+          )}
         </div>
       )}
 
       {/* ── 공지/점검 탭 ── */}
       {activeTab === '공지/점검' && (
+        loadingAnn ? (
+          <div className="flex items-center justify-center h-48">
+            <Loader2 className="w-6 h-6 animate-spin text-gray-500" />
+          </div>
+        ) : (
         <div className="space-y-3">
-          {MOCK_ANNOUNCEMENTS.map(ann => {
+          {announcements.map(ann => {
             const cfg = ANN_CFG[ann.type]
             const Icon = cfg.icon
             return (
@@ -266,39 +391,52 @@ export default function SystemLogsPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={cn(
-                      'text-[10px] px-1.5 py-0.5 rounded-full border font-medium',
-                      ann.is_active
-                        ? 'bg-green-500/15 text-green-400 border-green-500/30'
-                        : 'bg-gray-700/30 text-gray-500 border-gray-700/30'
-                    )}>
+                    <button
+                      onClick={() => toggleAnnouncementActive(ann)}
+                      className={cn(
+                        'text-[10px] px-1.5 py-0.5 rounded-full border font-medium cursor-pointer transition-colors',
+                        ann.is_active
+                          ? 'bg-green-500/15 text-green-400 border-green-500/30 hover:bg-green-500/25'
+                          : 'bg-gray-700/30 text-gray-500 border-gray-700/30 hover:bg-gray-700/50'
+                      )}>
                       {ann.is_active ? '게시중' : '종료'}
-                    </span>
-                    <button className="p-1.5 text-gray-500 hover:text-gray-300 rounded-lg hover:bg-white/5">
+                    </button>
+                    <button onClick={() => { setEditingAnn(ann); setShowAnnouncementModal(true) }}
+                      className="p-1.5 text-gray-500 hover:text-gray-300 rounded-lg hover:bg-white/5">
                       <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => deleteAnnouncement(ann)}
+                      className="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-white/5">
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
               </div>
             )
           })}
-          {MOCK_ANNOUNCEMENTS.length === 0 && (
+          {announcements.length === 0 && (
             <div className="py-16 text-center">
               <Megaphone className="w-10 h-10 text-gray-700 mx-auto mb-3" />
               <p className="text-sm text-gray-500">등록된 공지가 없습니다</p>
             </div>
           )}
         </div>
+        )
       )}
 
       {showAnnouncementModal && (
-        <AnnouncementModal onClose={() => setShowAnnouncementModal(false)} />
+        <AnnouncementModal
+          editing={editingAnn}
+          onClose={() => { setShowAnnouncementModal(false); setEditingAnn(null) }}
+          onSaved={loadAnnouncements}
+        />
       )}
     </div>
   )
 }
 
-// Pencil import 누락 방지
+/** Pencil 아이콘 fallback. lucide-react의 Pencil을 별도로 import하지 않고 인라인 SVG로 대체한다.
+ *  공지 카드의 편집 버튼에서 사용. */
 function Pencil({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

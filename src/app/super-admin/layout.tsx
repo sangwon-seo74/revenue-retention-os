@@ -5,9 +5,11 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Building2, CreditCard, Receipt,
   Layers, ChevronRight, Shield, LogOut,
-  Bell, Search, Activity
+  Search, Activity
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CommandPalette } from './_components/command-palette'
+import { NotificationBell } from './_components/notification-bell'
 
 const NAV = [
   { href: '/super-admin/dashboard',      icon: LayoutDashboard, label: '운영 대시보드' },
@@ -18,6 +20,9 @@ const NAV = [
   { href: '/super-admin/system/logs',    icon: Activity,        label: '시스템 관리' },
 ]
 
+/** 슈퍼 관리자 영역 공통 레이아웃.
+ *  좌측 네비게이션(대시보드/테넌트/구독/결제/플랜/시스템)과 상단 검색바를 제공하고,
+ *  메인 콘텐츠는 자식 컴포넌트로 렌더링한다. proxy.ts에서 인증/권한을 사전에 검증한다. */
 export default function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? ''
 
@@ -80,18 +85,15 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 상단 헤더 */}
         <header className="h-13 shrink-0 flex items-center justify-between px-6 border-b border-white/10 bg-gray-950">
-          <div className="flex items-center gap-3 flex-1 max-w-sm">
-            <Search className="w-4 h-4 text-gray-500 shrink-0" />
-            <input
-              placeholder="테넌트명, 이메일 검색..."
-              className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none"
-            />
-          </div>
+          <button
+            onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+            className="flex items-center gap-3 flex-1 max-w-sm text-left text-gray-500 hover:text-gray-300 transition-colors">
+            <Search className="w-4 h-4 shrink-0" />
+            <span className="flex-1 text-sm">테넌트, 사용자, 인보이스 검색...</span>
+            <kbd className="text-[10px] text-gray-600 border border-gray-700 px-1.5 py-0.5 rounded">⌘K</kbd>
+          </button>
           <div className="flex items-center gap-3">
-            <button className="relative p-1.5 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-red-500 rounded-full" />
-            </button>
+            <NotificationBell />
           </div>
         </header>
 
@@ -100,6 +102,9 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           {children}
         </main>
       </div>
+
+      {/* 글로벌 명령 팔레트 (Cmd+K) */}
+      <CommandPalette />
     </div>
   )
 }

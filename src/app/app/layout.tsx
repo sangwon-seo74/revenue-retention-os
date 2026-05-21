@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/supabase/auth-client'
+import { AnnouncementBanner } from './_components/announcement-banner'
 
 const NAV_MAIN = [
   { href: '/app/dashboard',         icon: LayoutDashboard, label: '대시보드' },
@@ -234,6 +235,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </header>
+
+        <AnnouncementBanner />
 
         <main className="flex-1 overflow-y-auto">
           <div className="max-w-7xl mx-auto h-full">

@@ -107,7 +107,7 @@ export default function DashboardPage() {
         <MetricCard label="오늘 통화" value={s.calls_today} icon={Phone} color="bg-blue-500/20 text-[#58A6FF]" href="/app/activities" />
         <MetricCard label="갱신 임박 (D-7)" value={s.renewals_d7} sub={`D-30 기준 ${s.renewals_d30}건`} icon={RefreshCw} color="bg-red-500/20 text-[#FF7B72]" href="/app/renewals" />
         <MetricCard label="기한 초과 할일" value={s.overdue_tasks} sub="미처리" icon={CheckSquare} color={s.overdue_tasks > 0 ? 'bg-amber-500/20 text-[#E3B341]' : 'bg-green-500/20 text-[#3FB950]'} href="/app/tasks/my" />
-        <MetricCard label="이번 달 갱신" value={`${s.renewals_d30}건`} icon={TrendingUp} color="bg-green-500/20 text-[#3FB950]" href="/app/reports/renewal-rate" />
+        <MetricCard label="갱신 임박 (D-30)" value={`${s.renewals_d30}건`} icon={TrendingUp} color="bg-green-500/20 text-[#3FB950]" href="/app/reports/renewal-rate" />
       </div>
 
       {/* 업무 달성율 */}

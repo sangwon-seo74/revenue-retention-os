@@ -23,25 +23,25 @@ export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
   const res = NextResponse.next()
 
-  // ── Supabase 세션 갱신 ──────────────────────────────────
+  // ── Supabase 세션 검증 (getUser: 서버 검증 — JWT 조작 방어) ─
   const supabase = createProxyClient(req, res)
-  let session: { user: { id: string; email?: string } } | null = null
+  let user: { id: string; email?: string } | null = null
   try {
-    const { data } = await supabase.auth.getSession()
-    session = data.session
+    const { data } = await supabase.auth.getUser()
+    user = data.user
   } catch {
     // Supabase 연결 실패 시 비인증 상태로 처리
-    session = null
+    user = null
   }
 
   // ── /super-admin/* ─────────────────────────────────────
   if (pathname.startsWith('/super-admin')) {
-    if (!session) {
+    if (!user) {
       return NextResponse.redirect(
         new URL(`/login?redirect=${encodeURIComponent(pathname)}&type=super_admin`, req.url)
       )
     }
-    const email = session.user.email ?? ''
+    const email = user.email ?? ''
     if (!SUPER_ADMIN_EMAILS.includes(email)) {
       return NextResponse.redirect(new URL('/app/dashboard', req.url))
     }
@@ -53,7 +53,7 @@ export async function proxy(req: NextRequest) {
   const isApi = pathname.startsWith('/api')
 
   if (isApp || isApi) {
-    if (!session) {
+    if (!user) {
       // API 요청은 리다이렉트 대신 401을 withAuth에서 처리
       if (isApi) return res
       return NextResponse.redirect(
@@ -65,7 +65,7 @@ export async function proxy(req: NextRequest) {
     const { data: profile } = await db
       .from('users')
       .select('role, tenant_id, is_active')
-      .eq('id', session.user.id)
+      .eq('id', user.id)
       .single()
 
     // 프로필 미조회 시 조용히 통과 — 강제 로그아웃 없이 API/앱이 자체적으로 401 처리
@@ -90,13 +90,16 @@ export async function proxy(req: NextRequest) {
 
     const requestHeaders = new Headers(req.headers)
     requestHeaders.set('x-tenant-id', profile.tenant_id)
-    requestHeaders.set('x-user-id',   session.user.id)
+    requestHeaders.set('x-user-id',   user.id)
     requestHeaders.set('x-user-role', role)
 
-    return NextResponse.next({ request: { headers: requestHeaders } })
+    // getUser() 가 토큰을 갱신했을 때 res에 쌓인 Set-Cookie를 최종 응답에 전달
+    const next = NextResponse.next({ request: { headers: requestHeaders } })
+    res.cookies.getAll().forEach(cookie => next.cookies.set(cookie))
+    return next
   }
 
-  if (pathname === '/login' && session) {
+  if (pathname === '/login' && user) {
     return NextResponse.redirect(new URL('/app/dashboard', req.url))
   }
 

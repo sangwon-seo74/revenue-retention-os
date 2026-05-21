@@ -65,8 +65,10 @@ export const PATCH = withAuth(async (req, ctx, params) => {
         .from('renewals').select('contract_id')
         .eq('id', params!.id).eq('tenant_id', ctx.tenantId).single()
       if (renewalRow?.contract_id) {
-        await supabase.from('contracts').update({ status: 'renewed' })
+        const { error: contractErr } = await supabase
+          .from('contracts').update({ status: 'renewed' })
           .eq('id', renewalRow.contract_id).eq('tenant_id', ctx.tenantId)
+        if (contractErr) return err('DB_ERROR', '원계약 상태 업데이트 실패: ' + contractErr.message, 500)
       }
     } else if (result === 'churned') {
       updates.status = 'lost'

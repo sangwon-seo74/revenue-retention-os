@@ -306,6 +306,7 @@ function CompanyRowItem({
 export default function CompaniesPage() {
   const [loading, setLoading]         = useState(true)
   const [companies, setCompanies]     = useState<CompanyRow[]>([])
+  const [totalCount, setTotalCount]   = useState(0)
   const [q,         setQ]             = useState('')
   const [status,    setStatus]        = useState<CompanyStatus | 'all'>('all')
   const [risk,      setRisk]          = useState<RiskLevel | 'all'>('all')
@@ -314,7 +315,11 @@ export default function CompaniesPage() {
   useEffect(() => {
     fetch('/api/companies?limit=100')
       .then(r => r.json())
-      .then(json => { setCompanies((json.data?.data ?? []) as CompanyRow[]); setLoading(false) })
+      .then(json => {
+        setCompanies((json.data?.data ?? []) as CompanyRow[])
+        setTotalCount(json.data?.count ?? 0)
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [])
 
@@ -374,6 +379,12 @@ export default function CompaniesPage() {
           ))}
         </div>
       </div>
+
+      {totalCount > companies.length && (
+        <div className="bg-amber-500/10 border border-[#7a5000] text-[#E3B341] text-xs rounded-lg px-4 py-2.5 shrink-0">
+          전체 {totalCount}개 중 상위 100개만 표시됩니다. 나머지 {totalCount - companies.length}개는 검색·필터를 활용해 확인하세요.
+        </div>
+      )}
 
       <div className="flex-1 min-h-0 bg-dk-surface border border-dk-border rounded-xl overflow-hidden flex flex-col">
         <div className="overflow-y-auto flex-1">

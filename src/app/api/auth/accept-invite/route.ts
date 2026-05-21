@@ -4,6 +4,7 @@
 import { NextRequest } from 'next/server'
 import { ok, err } from '@/lib/utils'
 import { verifyInviteToken } from '@/lib/invite-token'
+import { createServiceClient } from '@/lib/supabase/client'
 
 // ─── GET — 토큰 유효성 확인 (초대 페이지 진입 시 호출) ──
 export async function GET(req: NextRequest) {
@@ -15,24 +16,19 @@ export async function GET(req: NextRequest) {
   const payload = verifyInviteToken(token)
   if (!payload) return err('INVALID_TOKEN', '유효하지 않거나 만료된 초대 링크입니다', 400)
 
-  // 이미 사용됐는지 확인
-  // const { rowCount } = await db.query(
-  //   'SELECT 1 FROM users WHERE email = $1 AND tenant_id = $2',
-  //   [payload.email, payload.tenantId]
-  // )
-  // if (rowCount > 0) return err('ALREADY_USED', '이미 사용된 초대 링크입니다', 409)
-
   // 테넌트 이름 조회
-  // const { rows: [tenant] } = await db.query(
-  //   'SELECT name FROM tenants WHERE id = $1',
-  //   [payload.tenantId]
-  // )
+  const supabase = createServiceClient()
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('name')
+    .eq('id', payload.tenantId)
+    .single()
 
   return ok({
-    email: payload.email,
-    role: payload.role,
-    tenant_name: '(주)테크솔루션', // 실제는 tenant 조회
-    expires_at: payload.expiresAt,
+    email:       payload.email,
+    role:        payload.role,
+    tenant_name: (tenant as { name: string } | null)?.name ?? '',
+    expires_at:  payload.expiresAt,
   })
 }
 
@@ -43,74 +39,40 @@ export async function POST(req: NextRequest) {
 
   const { token, name, password } = body
 
-  if (!token)    return err('VALIDATION', 'token은 필수입니다')
-  if (!name?.trim())     return err('VALIDATION', 'name은 필수입니다')
-  if (!password) return err('VALIDATION', 'password는 필수입니다')
+  if (!token)           return err('VALIDATION', 'token은 필수입니다')
+  if (!name?.trim())    return err('VALIDATION', 'name은 필수입니다')
+  if (!password)        return err('VALIDATION', 'password는 필수입니다')
   if (password.length < 8) return err('VALIDATION', '비밀번호는 8자 이상이어야 합니다')
 
-  // 토큰 검증
+  // 토큰 서명 + 만료일 검증
   const payload = verifyInviteToken(token)
   if (!payload) return err('INVALID_TOKEN', '유효하지 않거나 만료된 초대 링크입니다', 400)
 
+  const supabase = createServiceClient()
+
   // 중복 가입 방지
-  // const { rowCount } = await db.query(
-  //   'SELECT 1 FROM users WHERE email = $1',
-  //   [payload.email]
-  // )
-  // if (rowCount > 0) return err('DUPLICATE', '이미 가입된 이메일입니다', 409)
+  const { count: existing } = await supabase
+    .from('users')
+    .select('*', { count: 'exact', head: true })
+    .eq('email', payload.email)
+  if ((existing ?? 0) > 0) return err('DUPLICATE', '이미 가입된 이메일입니다', 409)
 
-  // 비밀번호 해시
-  // const hashedPw = await bcrypt.hash(password, 12)
+  // Supabase Auth 계정 생성
+  // DB 트리거(fn_handle_new_auth_user)가 app_metadata를 읽어 users 테이블 레코드를 자동 생성
+  const { data, error } = await supabase.auth.admin.createUser({
+    email:         payload.email,
+    password,
+    email_confirm: true,
+    user_metadata: { name },
+    app_metadata:  { tenant_id: payload.tenantId, role: payload.role },
+  })
+  if (error) return err('AUTH_ERROR', error.message, 500)
 
-  // Supabase Auth 사용 시:
-  // const { createServiceClient } = await import('@/lib/supabase/client')
-  // const supabaseAdmin = createServiceClient()
-  //
-  // // 1. Auth 유저 생성
-  // const { data, error } = await supabaseAdmin.auth.admin.createUser({
-  //   email: payload.email,
-  //   password,
-  //   email_confirm: true,
-  //   user_metadata: { name },
-  //   app_metadata:  { tenant_id: payload.tenantId, role: payload.role },
-  // })
-  // if (error) throw error
-  //
-  // // 2. users 테이블 레코드 생성 (트리거로 자동화도 가능)
-  // const { error: dbErr } = await supabaseAdmin
-  //   .from('users')
-  //   .insert({
-  //     id:        data.user.id,
-  //     tenant_id: payload.tenantId,
-  //     email:     payload.email,
-  //     name,
-  //     role:      payload.role,
-  //     is_active: true,
-  //   })
-  // if (dbErr) {
-  //   // 롤백: Auth 유저 삭제
-  //   await supabaseAdmin.auth.admin.deleteUser(data.user.id)
-  //   throw dbErr
-  // }
-  //
-  // // 3. 토큰 무효화
-  // await supabaseAdmin
-  //   .from('invite_tokens')
-  //   .delete()
-  //   .eq('token', token)
-
-  const mockUser = {
-    id: crypto.randomUUID(),
-    tenant_id: payload.tenantId,
-    email: payload.email,
-    name,
-    role: payload.role,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  }
+  // 사용된 토큰 무효화 (초대 토큰 DB 저장이 활성화된 경우에만 실행)
+  await supabase.from('invite_tokens').delete().eq('token', token)
 
   return ok({
     message: '계정이 생성되었습니다. 로그인하세요.',
-    user: { id: mockUser.id, email: mockUser.email, name: mockUser.name },
+    user: { id: data.user.id, email: data.user.email, name },
   })
 }

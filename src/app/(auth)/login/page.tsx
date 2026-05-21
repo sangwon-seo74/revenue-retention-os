@@ -41,6 +41,12 @@ function LoginContent() {
       const { session: supaSession, error } = await signIn(email, password)
 
       if (error) {
+        // 로그인 실패도 audit_logs에 기록 (fire-and-forget)
+        fetch('/api/auth/log-access', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, action: 'login', result: 'fail' }),
+        }).catch(() => {})
+
         // Supabase 에러 메시지 한국어 변환
         const msg = error.message.includes('Invalid login credentials')
           ? '이메일 또는 비밀번호가 올바르지 않습니다'
@@ -51,6 +57,12 @@ function LoginContent() {
       }
 
       if (!supaSession) throw new Error('로그인 중 오류가 발생했습니다')
+
+      // 로그인 성공 기록 (fire-and-forget) — 실패해도 페이지 이동은 진행
+      fetch('/api/auth/log-access', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, action: 'login', result: 'success' }),
+      }).catch(() => {})
 
       router.push(redirect)
       router.refresh()
